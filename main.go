@@ -3,9 +3,8 @@ package main
 import (
 	"context"
 	"net/http"
-	"time"
 
-	lancamentos "fluxo-go/lancamentos/core"
+	shell "fluxo-go/lancamentos/shell"
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/danielgtaylor/huma/v2/adapters/humachi"
@@ -24,26 +23,27 @@ func main() {
 		),
 	)
 
-	huma.Get(
+	huma.Post(
 		api,
 		"/lancamentos",
+
 		func(
 			ctx context.Context,
-			input *struct{},
-		) (*ListarLancamentosResponse, error) {
+			input *shell.
+				EfetuarLancamentoRequest,
+		) (
+			*shell.LancamentoEfetuadoResponse,
+			error,
+		) {
 
-			response := ListarLancamentosResponse{
-				Body: []lancamentos.Credito{
-					{
-						DadosLancamento: lancamentos.DadosLancamento{
-							ID:        "1",
-							Valor:     150.00,
-							Descricao: "Depósito",
-							Data:      time.Now(),
-						},
-					},
-				},
+			result :=
+				input.Handle()
+
+			if result.IsError() {
+				return nil, result.UnwrapError()
 			}
+
+			response := result.Unwrap()
 
 			return &response, nil
 		},
@@ -53,8 +53,4 @@ func main() {
 		":8080",
 		router,
 	)
-}
-
-type ListarLancamentosResponse struct {
-	Body []lancamentos.Credito `json:"body"`
 }

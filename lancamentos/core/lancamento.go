@@ -1,9 +1,6 @@
 package lancamentos
 
-import (
-	"errors"
-	"time"
-)
+import "time"
 
 type Lancamento interface {
 	isLancamento()
@@ -74,6 +71,3 @@ type LancamentoEfetuadoEvent struct {
 	DadosLancamento
 	Tipo TipoLancamento
 }
-
-var ErrTipoLancamentoInvalido = errors.New("tipo de lançamento inválido")
-var ErrLancamentoOriginalNaoEncontrado = errors.New("lançamento original para estorno não encontrado")
