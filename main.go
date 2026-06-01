@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"log"
 	"net/http"
 
 	shell "fluxo-go/lancamentos/shell"
@@ -12,7 +13,6 @@ import (
 )
 
 func main() {
-
 	router := chi.NewRouter()
 
 	api := humachi.New(
@@ -26,31 +26,22 @@ func main() {
 	huma.Post(
 		api,
 		"/lancamentos",
-
 		func(
 			ctx context.Context,
-			input *shell.
-				EfetuarLancamentoRequest,
-		) (
-			*shell.LancamentoEfetuadoResponse,
-			error,
-		) {
+			input *shell.EfetuarLancamentoRequest,
+		) (*shell.LancamentoEfetuadoResponse, error) {
 
-			result :=
-				input.Handle()
-
+			result := input.Handle()
 			if result.IsError() {
 				return nil, result.UnwrapError()
 			}
 
 			response := result.Unwrap()
-
 			return &response, nil
 		},
 	)
 
-	http.ListenAndServe(
-		":8080",
-		router,
-	)
+	if err := http.ListenAndServe(":8080", router); err != nil {
+		log.Fatal(err)
+	}
 }

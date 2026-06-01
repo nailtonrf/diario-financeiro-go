@@ -1,4 +1,4 @@
-package lancamentos
+package shell
 
 type LancamentoEfetuadoResponse struct {
 	Body LancamentoEfetuadoBody `json:"body"`

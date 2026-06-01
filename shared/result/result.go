@@ -1,9 +1,6 @@
 package result
 
-import (
-	"errors"
-	"fmt"
-)
+import "fmt"
 
 type Result[T any] struct {
 	value T
@@ -40,10 +37,7 @@ func (r Result[T]) UnwrapOr(defaultValue T) T {
 }
 
 func (r Result[T]) UnwrapError() error {
-	if r.err != nil {
-		return r.err
-	}
-	return errors.New("called UnwrapError on an Ok result")
+	return r.err
 }
 
 func Bind[T any, U any](r Result[T], fn func(T) Result[U]) Result[U] {

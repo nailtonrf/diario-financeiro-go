@@ -13,25 +13,24 @@ func Decide(
 	switch v := l.(type) {
 
 	case Credito:
-
 		return result.Ok(
 			LancamentoEfetuadoEvent{
 				DadosLancamento: v.DadosLancamento,
 				Tipo:            CreditoTipo,
+				Motivo:          nil,
 			},
 		)
 
 	case Debito:
-
 		return result.Ok(
 			LancamentoEfetuadoEvent{
 				DadosLancamento: v.DadosLancamento,
 				Tipo:            DebitoTipo,
+				Motivo:          nil,
 			},
 		)
 
 	case Estorno:
-
 		if e.IsNone() {
 			return result.Error[LancamentoEfetuadoEvent](
 				ErrLancamentoOriginalNaoEncontrado,
@@ -46,11 +45,11 @@ func Decide(
 		}
 
 		dadosLancamento := v.DadosLancamento
-		if estorno.Tipo() == CreditoTipo {
+		switch estorno.Tipo() {
+		case CreditoTipo:
 			dadosLancamento.Valor = dadosLancamento.Valor * -1
 			dadosLancamento.Descricao = "[Estorno de crédito] - " + dadosLancamento.Descricao
-		}
-		if estorno.Tipo() == DebitoTipo {
+		case DebitoTipo:
 			dadosLancamento.Descricao = "[Estorno de débito] - " + dadosLancamento.Descricao
 		}
 
@@ -58,11 +57,11 @@ func Decide(
 			LancamentoEfetuadoEvent{
 				DadosLancamento: dadosLancamento,
 				Tipo:            EstornoTipo,
+				Motivo:          v.Motivo,
 			},
 		)
 
 	default:
-
 		return result.Error[LancamentoEfetuadoEvent](
 			ErrTipoLancamentoInvalido,
 		)

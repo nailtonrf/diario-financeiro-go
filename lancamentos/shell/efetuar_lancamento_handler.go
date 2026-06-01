@@ -1,111 +1,55 @@
-package lancamentos
+package shell
 
 import (
+	"time"
+
 	core "fluxo-go/lancamentos/core"
 	"fluxo-go/shared/option"
 	"fluxo-go/shared/result"
-	"time"
 )
 
 func (e EfetuarLancamentoRequest) Handle() result.Result[LancamentoEfetuadoResponse] {
+	return result.Map(
+		result.Bind(
+			e.toDomain(),
+			func(l core.Lancamento) result.Result[core.LancamentoEfetuadoEvent] {
+				return core.Decide(l, option.None[core.Lancamento]())
+			},
+		),
+		toResponse,
+	)
+}
 
+func (e EfetuarLancamentoRequest) toDomain() result.Result[core.Lancamento] {
 	dados := core.DadosLancamento{
 		Valor:     e.Body.Valor,
 		Descricao: e.Body.Descricao,
 		Data:      time.Now().UTC(),
 	}
 
-	var lancamento core.Lancamento
-
 	switch e.Body.Tipo {
-
 	case core.CreditoTipo:
-
-		lancamento = core.Credito{
-			DadosLancamento: dados,
-		}
-
+		return result.Ok[core.Lancamento](core.NewCredito(dados))
 	case core.DebitoTipo:
-
-		lancamento = core.Debito{
-			DadosLancamento: dados,
-		}
-
+		return result.Ok[core.Lancamento](core.NewDebito(dados))
 	case core.EstornoTipo:
-
 		if e.Body.LancamentoOriginalID == nil {
-
-			return result.Error[LancamentoEfetuadoResponse](
-				core.
-					ErrLancamentoOriginalNaoEncontrado,
-			)
+			return result.Error[core.Lancamento](core.ErrLancamentoOriginalNaoEncontrado)
 		}
-
-		lancamento = core.Estorno{
-
-			DadosLancamento: dados,
-
-			LancamentoOriginalID: *e.Body.LancamentoOriginalID,
-
-			Motivo: deref(
-				e.Body.Motivo,
-			),
-		}
-
+		return result.Ok[core.Lancamento](core.NewEstorno(dados, *e.Body.LancamentoOriginalID, e.Body.Motivo))
 	default:
-
-		return result.Error[LancamentoEfetuadoResponse](
-			core.
-				ErrTipoLancamentoInvalido,
-		)
+		return result.Error[core.Lancamento](core.ErrTipoLancamentoInvalido)
 	}
-
-	deciderResult :=
-		core.
-			Decide(
-				lancamento,
-				option.None[core.Lancamento](),
-			)
-
-	if deciderResult.IsError() {
-
-		return result.Error[LancamentoEfetuadoResponse](
-			deciderResult.UnwrapError(),
-		)
-	}
-
-	event :=
-		deciderResult.Unwrap()
-
-	response :=
-		LancamentoEfetuadoResponse{
-
-			Body: LancamentoEfetuadoBody{
-
-				ID: event.ID,
-
-				Tipo: string(
-					event.Tipo,
-				),
-
-				Valor: event.Valor,
-
-				Descricao: event.Descricao,
-			},
-		}
-
-	return result.Ok(
-		response,
-	)
 }
 
-func deref(
-	value *string,
-) string {
-
-	if value == nil {
-		return ""
+func toResponse(event core.LancamentoEfetuadoEvent) LancamentoEfetuadoResponse {
+	return LancamentoEfetuadoResponse{
+		Body: LancamentoEfetuadoBody{
+			ID:        event.ID,
+			Tipo:      string(event.Tipo),
+			Valor:     event.Valor,
+			Descricao: event.Descricao,
+			Motivo:    event.Motivo,
+		},
 	}
-
-	return *value
 }

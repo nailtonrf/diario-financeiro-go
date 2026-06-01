@@ -54,7 +54,7 @@ func (d Debito) Valor() float64 {
 type Estorno struct {
 	DadosLancamento
 	LancamentoOriginalID string
-	Motivo               string
+	Motivo               *string
 }
 
 func (Estorno) isLancamento() {}
@@ -67,7 +67,24 @@ func (e Estorno) Valor() float64 {
 	return e.DadosLancamento.Valor
 }
 
+func NewCredito(dados DadosLancamento) Credito {
+	return Credito{DadosLancamento: dados}
+}
+
+func NewDebito(dados DadosLancamento) Debito {
+	return Debito{DadosLancamento: dados}
+}
+
+func NewEstorno(dados DadosLancamento, originalID string, motivo *string) Estorno {
+	return Estorno{
+		DadosLancamento:      dados,
+		LancamentoOriginalID: originalID,
+		Motivo:               motivo,
+	}
+}
+
 type LancamentoEfetuadoEvent struct {
 	DadosLancamento
-	Tipo TipoLancamento
+	Tipo   TipoLancamento
+	Motivo *string `json:"motivo,omitempty"`
 }
